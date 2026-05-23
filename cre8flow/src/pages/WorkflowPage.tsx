@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import Toast from '../components/Toast'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import type { Block, BlockType } from '../lib/supabase'
@@ -34,6 +35,13 @@ export default function WorkflowPage() {
     hook: null, script: null, shoot: null, edit: null, publish: null,
   })
   const [topic, setTopic] = useState('')
+  const [platform, setPlatform] = useState<'instagram'|'youtube'|'linkedin'>('instagram')
+  const [toast, setToast] = useState<{message:string,type:'success'|'error'}|null>(null)
+
+  const showToast = (msg:string, type:'success'|'error') => {
+    setToast({message:msg,type});
+    setTimeout(()=>setToast(null),2500);
+  }
   const [generating, setGenerating] = useState(false)
   const [showWaitlist, setShowWaitlist] = useState(false)
   const [lockedStageClicked, setLockedStageClicked] = useState<BlockType>('shoot')
@@ -75,7 +83,7 @@ export default function WorkflowPage() {
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic: topic.trim(), isPro }),
+        body: JSON.stringify({ topic: topic.trim(), isPro, platform }),
       })
       const data = await res.json()
 
@@ -171,6 +179,26 @@ export default function WorkflowPage() {
       </div>
 
       <div className="flex gap-3 mb-8">
+          <div className="flex gap-2 mb-2">
+            <button
+              onClick={() => setPlatform('instagram')}
+              className={`text-xs px-4 py-2 rounded-lg transition-colors ${platform === 'instagram' ? 'bg-[#7c3aed] text-white border-[#7c3aed]' : 'bg-[#1a1a1a] text-[#6b7280] border border-[#2a2a2a]'} `}
+            >
+              Instagram Reels
+            </button>
+            <button
+              onClick={() => setPlatform('youtube')}
+              className={`text-xs px-4 py-2 rounded-lg transition-colors ${platform === 'youtube' ? 'bg-[#7c3aed] text-white border-[#7c3aed]' : 'bg-[#1a1a1a] text-[#6b7280] border border-[#2a2a2a]'} `}
+            >
+              YouTube Shorts
+            </button>
+            <button
+              onClick={() => setPlatform('linkedin')}
+              className={`text-xs px-4 py-2 rounded-lg transition-colors ${platform === 'linkedin' ? 'bg-[#7c3aed] text-white border-[#7c3aed]' : 'bg-[#1a1a1a] text-[#6b7280] border border-[#2a2a2a]'} `}
+            >
+              LinkedIn
+            </button>
+          </div>
         <input
           type="text"
           placeholder="e.g. 5 habits that changed my morning routine"
