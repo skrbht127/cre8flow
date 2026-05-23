@@ -8,7 +8,7 @@ import {
   PUBLISH_STRATEGIES,
 } from '../src/lib/knowledge.js'
 
-const groqApiKey = process.env.VITE_GROQ_API_KEY
+const groqApiKey = process.env.GROQ_API_KEY
 
 const llm = new ChatGroq({
   apiKey: groqApiKey,
@@ -44,6 +44,8 @@ const generateStage = async (
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  console.log('GROQ_API_KEY defined:', typeof process.env.GROQ_API_KEY !== 'undefined')
+
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const { topic, isPro } = req.body

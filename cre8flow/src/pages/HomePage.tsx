@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import type { Workflow } from '../lib/supabase'
-import { Plus, Sparkles } from 'lucide-react'
+import { Plus, Sparkles, Trash2 } from 'lucide-react'
 
 export default function HomePage() {
   const navigate = useNavigate()
+  const workflowsRef = useRef<HTMLInputElement>(null)
   const [workflows, setWorkflows] = useState<Workflow[]>([])
   const [loading, setLoading] = useState(true)
   const [newName, setNewName] = useState('')
@@ -99,22 +100,56 @@ export default function HomePage() {
         <div>
           <h2 className="text-xl font-semibold mb-4">Your Workflows</h2>
           {loading ? (
-            <p className="text-muted">Loading...</p>
+            <div className="space-y-3">
+              {[...Array(3)].map((_, i) => (
+                <div
+                  key={i}
+                  className="h-20 bg-[#2a2a2a] animate-pulse rounded-xl"
+                />
+              ))}
+            </div>
           ) : workflows.length === 0 ? (
-            <p className="text-muted">No workflows yet. Create one to get started!</p>
+            <div className="text-center mt-12">
+              <p className="text-muted mb-4">No workflows yet. Create your first one.</p>
+              <button
+                onClick={() => workflowsRef?.current?.focus?.()}
+                className="px-4 py-2 bg-accent hover:bg-accent-light rounded"
+              >
+                New Workflow
+              </button>
+            </div>
           ) : (
             <div className="space-y-3">
               {workflows.map((wf) => (
-                <button
+                <div
                   key={wf.id}
-                  onClick={() => navigate(`/workflow/${wf.id}`)}
-                  className="w-full p-4 bg-surface border border-border rounded hover:border-accent transition text-left"
+                  className="flex items-center justify-between p-4 bg-surface border border-border rounded hover:border-accent transition"
                 >
-                  <h3 className="font-semibold text-lg">{wf.name}</h3>
-                  <p className="text-sm text-muted">
-                    {new Date(wf.created_at).toLocaleDateString()}
-                  </p>
-                </button>
+                  <button
+                    onClick={() => navigate(`/workflow/${wf.id}`)}
+                    className="text-left"
+                  >
+                    <h3 className="font-semibold text-lg">{wf.name}</h3>
+                    <p className="text-sm text-muted">
+                      {new Date(wf.created_at).toLocaleDateString()}
+                    </p>
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (window.confirm('Delete this workflow?')) {
+                        // Delete blocks first (cascade)
+                        await supabase.from('blocks').delete().eq('workflow_id', wf.id)
+                        // Delete workflow
+                        await supabase.from('workflows').delete().eq('id', wf.id)
+                        // Update local state
+                        setWorkflows((prev) => prev.filter((w) => w.id !== wf.id))
+                      }
+                    }}
+                    className="p-2 text-muted hover:text-red-400"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
               ))}
             </div>
           )}
