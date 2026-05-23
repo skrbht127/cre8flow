@@ -5,6 +5,12 @@
 - Monetisable SaaS (freemium). Goal: first revenue ASAP.
 - Also serves as Cantilever internship interview portfolio demo.
 - Constraint: zero money to spend. All free APIs/services only.
+- **STATUS: MVP SHIPPED ✅ — Live on Vercel**
+
+## Live URLs
+- **Production**: https://cre8flow.vercel.app (update with actual URL)
+- **GitHub**: https://github.com/skrbht127/cre8flow
+- **Supabase project**: https://supabase.com/dashboard/project/vmqwbgzyohjqqzfgbegt
 
 ## Product Vision
 A 5-stage pipeline tool: `Hook → Script → Shoot Plan → Edit Notes → Publish Strategy`
@@ -18,7 +24,7 @@ Not just a pipeline tracker — a "content OS" that knows creator craft (hook fo
 Frontend     → React + Vite + TypeScript → Vercel
 Backend      → Vercel serverless functions in /api folder (Node.js)
 AI Layer     → LangChain + @langchain/groq (Llama 3.3 70B via Groq API)
-Database     → Supabase (Postgres)
+Database     → Supabase (Postgres) — RLS disabled for MVP
 Vector DB    → JSON knowledge base injected into prompts (MVP); pgvector via Supabase (v2)
 Payments     → Waitlist/email capture only (no Stripe yet)
 Styling      → Tailwind CSS v3 + custom dark theme
@@ -43,96 +49,91 @@ Structured JSON in `src/lib/knowledge.ts`:
 - No paid APIs. Groq free tier only (already has key from VoiceBridge project).
 - No HuggingFace Spaces backend (cold start UX too bad for monetisable product).
 - No auth on MVP (feature depth first).
-- Windows machine (PowerShell quirks apply: mkdir one at a time, cd D:\Desktop etc.).
-- User is non-expert on terminal/dev tools — needs exact copy-paste commands.
-
-## Product Philosophy
-- Ship today, validate, then iterate. No over-engineering.
-- Every feature should serve two purposes: product value + Cantilever interview demo.
-- RAG/LangGraph = moat AND interview talking point.
-- Niche to reels/video creators (not generic) for faster PMF.
+- Windows machine (PowerShell quirks apply: use Remove-Item not rmdir, cd D:\Desktop etc.)
+- Node v26.2.0, npm v11.13.0, Bun v1.3.14, Vercel CLI installed globally via npm.
 
 ## Architecture — File Structure
 ```
 cre8flow/                        ← C:\Users\HP\cre8flow
 ├── api/
-│   └── generate.ts              ← Vercel serverless fn (LangChain + Groq)
+│   └── generate.ts              ← Vercel serverless fn (LangChain + Groq) ✅
 ├── src/
 │   ├── pages/
-│   │   ├── HomePage.tsx         ← list workflows, create new
-│   │   └── WorkflowPage.tsx     ← 5-stage pipeline view
+│   │   ├── HomePage.tsx         ← workflow list + create new ✅
+│   │   └── WorkflowPage.tsx     ← 5-stage pipeline view + Generate All ✅
 │   ├── components/
-│   │   └── BlockCard.tsx        ← individual block accordion
+│   │   └── BlockCard.tsx        ← accordion block card ✅
 │   ├── lib/
-│   │   ├── knowledge.ts         ← Creator KB (hooks, shots, scripts — RAG data)
-│   │   └── supabase.ts          ← Supabase client + types
-│   ├── App.tsx
-│   ├── main.tsx
-│   └── index.css
-├── tailwind.config.js
-├── postcss.config.js
-├── vite.config.ts
-└── vercel.json
+│   │   ├── knowledge.ts         ← Creator KB (hooks, shots, scripts — RAG data) ✅
+│   │   └── supabase.ts          ← Supabase client + types ✅
+│   ├── App.tsx                  ← React Router routes ✅
+│   ├── main.tsx                 ← BrowserRouter entry ✅
+│   └── index.css                ← Tailwind base styles ✅
+├── tailwind.config.js           ← custom dark theme config ✅
+├── postcss.config.js            ✅
+├── vite.config.ts               ✅
+└── vercel.json                  ← SPA + API rewrites ✅
 ```
 
-## Supabase Types (locked)
-```typescript
-type BlockType = 'hook' | 'script' | 'shoot' | 'edit' | 'publish'
-type BlockStatus = 'not_started' | 'in_progress' | 'done'
-
-interface Block {
-  id: string; workflow_id: string; type: BlockType;
-  title: string; notes: string; status: BlockStatus; order_index: number;
-}
-interface Workflow { id: string; name: string; created_at: string; }
+## Supabase Tables (created ✅)
+```sql
+workflows (id uuid PK, name text, created_at timestamptz)
+blocks (id uuid PK, workflow_id uuid FK, type text, title text, notes text, status text, order_index int)
+waitlist (id uuid PK, email text unique, created_at timestamptz)
 ```
-
-## Deployment Decisions
-- Vercel chosen over HuggingFace Spaces: better cold start, free, frontend+backend unified
-- No HuggingFace FastAPI backend (UX priority > interview optics)
-- ChromaDB dropped: can't run in Vercel serverless. pgvector (Supabase) for v2. JSON injection for MVP.
-- Lovable/old repo abandoned: too entangled with Cloudflare Workers + @lovable.dev config
+RLS disabled on all 3 tables for MVP.
 
 ## Implementation Roadmap
-**MVP (today/current)**
-1. ✅ Env setup (Node, Bun, Git)
+**MVP (COMPLETE ✅)**
+1. ✅ Env setup (Node, Bun, Git, Vercel CLI)
 2. ✅ Fresh Vite project scaffolded at C:\Users\HP\cre8flow
-3. ✅ Dependencies installed
-4. ✅ Tailwind v3 configured
-5. ✅ Folder structure created (src/pages, src/components, src/lib, api/)
-6. ✅ knowledge.ts created (full Creator KB)
-7. ✅ supabase.ts created (client + types)
-8. 🔲 tailwind.config.js — replace with custom dark theme config
-9. 🔲 src/index.css — replace with base styles
-10. 🔲 src/main.tsx — BrowserRouter setup
-11. 🔲 src/App.tsx — Routes setup
-12. 🔲 api/generate.ts — Vercel serverless fn (LangChain + Groq, all 5 stages)
-13. 🔲 vercel.json — API route rewrites
-14. 🔲 src/pages/HomePage.tsx
-15. 🔲 src/pages/WorkflowPage.tsx (port from old workflow.$id.tsx)
-16. 🔲 src/components/BlockCard.tsx
-17. 🔲 .env setup (Supabase keys + Groq key)
-18. 🔲 Supabase DB tables (workflows, blocks)
-19. 🔲 Deploy to Vercel
+3. ✅ Dependencies installed (react-router-dom, supabase, langchain, groq, lucide-react etc.)
+4. ✅ Tailwind v3 configured with custom dark theme
+5. ✅ Folder structure created
+6. ✅ knowledge.ts — full Creator KB (5 arrays, 30+ entries)
+7. ✅ supabase.ts — client + types + BLOCK_META
+8. ✅ tailwind.config.js — custom dark theme
+9. ✅ src/index.css — base styles
+10. ✅ src/main.tsx — BrowserRouter setup
+11. ✅ src/App.tsx — Routes setup
+12. ✅ api/generate.ts — LangChain + Groq, all 5 stages, parallel generation
+13. ✅ vercel.json — SPA + API rewrites
+14. ✅ src/pages/HomePage.tsx — workflow list + create
+15. ✅ src/pages/WorkflowPage.tsx — pipeline builder + Generate All
+16. ✅ src/components/BlockCard.tsx — accordion with status
+17. ✅ .env setup (Supabase URL + anon key + Groq key)
+18. ✅ Supabase DB tables (workflows, blocks, waitlist)
+19. ✅ Deployed to Vercel — LIVE
 
-**v2 (post-MVP)**
-- Auth (Supabase Auth)
-- pgvector RAG (replace JSON injection)
-- Stripe subscription
-- User personal style memory (upload past scripts → embeddings)
-- Export workflow as PDF/Notion doc
-- Custom pipeline stages
+**v2 (next sprint)**
+- [ ] Freemium gate — free users see Hook + Script only, Pro waitlist modal on locked stages
+- [ ] Waitlist email capture — api/waitlist.ts + modal UI
+- [ ] Auth (Supabase Auth)
+- [ ] pgvector RAG (replace JSON injection with real vector search)
+- [ ] Stripe subscription
+- [ ] Export workflow as PDF/Markdown
+- [ ] User personal style memory (upload past scripts → embeddings → personalized generation)
+- [ ] Custom pipeline stages
+
+## Key Technical Decisions (locked, don't revisit)
+- Vercel over HuggingFace: better UX, zero cold start
+- JSON KB injection over ChromaDB: ChromaDB can't run in Vercel serverless
+- Groq over Claude/Gemini: free tier, fast inference, real interview talking point
+- Tailwind v3 over v4: stability, postcss compatibility
+- React Router DOM over TanStack Router: simpler for plain Vite SPA
+- Single "Generate All" button over per-block generate: better UX + cleaner freemium gate
+
+## Important Technical Notes
+- `api/generate.ts` imports from `../src/lib/knowledge.js` (needs .js extension for ESM/node16)
+- Vercel env vars must be set in dashboard (not just .env) for production
+- `vercel.json` uses `rewrites` only (not `routes`) to avoid MIME type conflicts with Vite
+- PowerShell: use `Remove-Item -Recurse -Force` not `rmdir /s /q`
+- To redeploy: `vercel --prod` from project directory
+- To unlink Vercel project: `Remove-Item -Recurse -Force .vercel` then re-run `vercel --prod`
 
 ## Future Vision
 - Template marketplace (creators sell pipelines to other creators)
-- Team features
+- Team workflows + real-time collaboration
 - Style personalization via user's past content
 - Multi-platform output (Reels, TikTok, Shorts simultaneously)
-
-## Important Technical Context
-- Old repo `content-flow-builder` (github.com/skrbht-127/content-flow-builder): TanStack Start + Cloudflare Workers. Abandoned. Only `workflow.$id.tsx` had extractable logic.
-- New repo: `cre8flow` at github.com/skrbht-127/cre8flow
-- Groq API key already exists (reused from VoiceBridge project)
-- Supabase keys exist in old `.env` — need to copy VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
-- Vercel API routes: `/api/*.ts` files at root → auto-detected by Vercel as serverless functions. Need `vercel.json` for rewrites with Vite SPA.
-- Tailwind v3 (NOT v4) — v4 was in old repo but we installed v3 fresh for stability + postcss compatibility
+- HYBE/entertainment industry version (K-pop content production pipelines)

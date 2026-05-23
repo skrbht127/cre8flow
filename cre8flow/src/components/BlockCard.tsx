@@ -1,48 +1,76 @@
 import { useState } from 'react'
-import { BLOCK_META } from '../lib/supabase'
-import type { Block } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
+import type { Block, BlockType } from '../lib/supabase'
 import { ChevronDown, Check, Clock, AlertCircle } from 'lucide-react'
 
 interface BlockCardProps {
   block: Block
-  onUpdate: (updates: Partial<Block>) => void
+  type: BlockType
+  label: string
+  icon: string
+  meta: { color: string; label: string }
+  generating: boolean
+  workflowId: string
+  onUpdate: (updated: Block) => void
 }
 
-export default function BlockCard({ block, onUpdate }: BlockCardProps) {
+export default function BlockCard({
+  block,
+  label,
+  icon,
+  meta,
+  onUpdate,
+}: BlockCardProps) {
   const [expanded, setExpanded] = useState(false)
-  const meta = BLOCK_META[block.type]
+  const [saving, setSaving] = useState(false)
 
   const statusIcon = {
-    not_started: <AlertCircle className="w-4 h-4" />,
-    in_progress: <Clock className="w-4 h-4" />,
-    done: <Check className="w-4 h-4" />,
+    not_started: <AlertCircle className="w-4 h-4 text-[#6b7280]" />,
+    in_progress: <Clock className="w-4 h-4 text-yellow-400" />,
+    done: <Check className="w-4 h-4 text-green-400" />,
   }
 
+  const handleNotesChange = async (notes: string) => {
+    const updated = { ...block, notes }
+    onUpdate(updated)
+    setSaving(true)
+    await supabase.from('blocks').update({ notes }).eq('id', block.id)
+    setSaving(false)
+  }
+
+  const handleStatusChange = async (status: Block['status']) => {
+    const updated = { ...block, status }
+    onUpdate(updated)
+    await supabase.from('blocks').update({ status }).eq('id', block.id)
+  }
+
+  const preview = block.notes
+    ? block.notes.substring(0, 80) + (block.notes.length > 80 ? '...' : '')
+    : 'No content yet'
+
   return (
-    <div className="bg-surface border border-border rounded-lg overflow-hidden">
+    <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl overflow-hidden">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full p-4 flex items-center gap-3 hover:bg-[#252525] transition"
+        className="w-full p-4 flex items-center gap-3 hover:bg-[#252525] transition text-left"
       >
-        <div className={`w-1 h-8 rounded ${meta.color}`} />
+        <div className={`w-1 h-8 rounded-full flex-shrink-0 ${meta.color}`} />
 
-        <div className="flex-1 text-left">
-          <h3 className="font-semibold">{meta.label}</h3>
+        <span className="text-base flex-shrink-0">{icon}</span>
 
-          <p className="text-sm text-muted">
-            {block.notes
-              ? block.notes.substring(0, 60) + '...'
-              : 'No content yet'}
-          </p>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-white text-sm">{label}</h3>
+          <p className="text-xs text-[#6b7280] truncate mt-0.5">{preview}</p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted">{block.status}</span>
-
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {saving && <span className="text-[10px] text-[#6b7280]">saving...</span>}
+          <span className="text-[10px] text-[#6b7280] capitalize hidden sm:block">
+            {block.status.replace('_', ' ')}
+          </span>
           {statusIcon[block.status]}
-
           <ChevronDown
-            className={`w-5 h-5 transition ${
+            className={`w-4 h-4 text-[#6b7280] transition-transform duration-200 ${
               expanded ? 'rotate-180' : ''
             }`}
           />
@@ -50,26 +78,19 @@ export default function BlockCard({ block, onUpdate }: BlockCardProps) {
       </button>
 
       {expanded && (
-        <div className="border-t border-border p-4 space-y-4">
+        <div className="border-t border-[#2a2a2a] p-4 space-y-3">
           <textarea
             value={block.notes}
-            onChange={(e) => onUpdate({ notes: e.target.value })}
+            onChange={(e) => handleNotesChange(e.target.value)}
             placeholder="Add or edit notes..."
-            className="w-full p-3 bg-[#1a1a1a] border border-border rounded text-white placeholder-muted focus:outline-none focus:border-accent resize-none"
-            rows={5}
+            className="w-full p-3 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg text-white text-sm placeholder-[#6b7280] focus:outline-none focus:border-[#7c3aed] resize-none leading-relaxed"
+            rows={6}
           />
 
           <select
             value={block.status}
-            onChange={(e) =>
-              onUpdate({
-                status: e.target.value as
-                  | 'not_started'
-                  | 'in_progress'
-                  | 'done',
-              })
-            }
-            className="w-full px-3 py-2 bg-[#1a1a1a] border border-border rounded text-white focus:outline-none focus:border-accent"
+            onChange={(e) => handleStatusChange(e.target.value as Block['status'])}
+            className="w-full px-3 py-2 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg text-white text-sm focus:outline-none focus:border-[#7c3aed]"
           >
             <option value="not_started">Not Started</option>
             <option value="in_progress">In Progress</option>
