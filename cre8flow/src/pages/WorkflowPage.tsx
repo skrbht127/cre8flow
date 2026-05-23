@@ -31,43 +31,45 @@ export default function WorkflowPage() {
   const navigate = useNavigate()
 
   const [workflowName, setWorkflowName] = useState('')
+  const [editingTitle, setEditingTitle] = useState(false)
   const [blocks, setBlocks] = useState<Record<BlockType, Block | null>>({
     hook: null, script: null, shoot: null, edit: null, publish: null,
   })
   const [topic, setTopic] = useState('')
   const [platform, setPlatform] = useState<'instagram'|'youtube'|'linkedin'>('instagram')
   const [toast, setToast] = useState<{message:string,type:'success'|'error'}|null>(null)
-
-  const showToast = (msg:string, type:'success'|'error') => {
-    setToast({message:msg,type});
-    setTimeout(()=>setToast(null),2500);
-  }
   const [generating, setGenerating] = useState(false)
   const [showWaitlist, setShowWaitlist] = useState(false)
   const [lockedStageClicked, setLockedStageClicked] = useState<BlockType>('shoot')
 
   const isPro = localStorage.getItem('cre8flow_pro') === 'true'
 
+  const showToast = (msg: string, type: 'success' | 'error') => {
+    setToast({ message: msg, type })
+    setTimeout(() => setToast(null), 2500)
+  }
+
+  const handleTitleSave = async () => {
+    if (!id) return
+    try {
+      await supabase.from('workflows').update({ name: workflowName }).eq('id', id)
+      setEditingTitle(false)
+      showToast('Workflow name saved', 'success')
+    } catch (e) {
+      console.error(e)
+      showToast('Failed to save workflow name', 'error')
+    }
+  }
+
   useEffect(() => {
     if (!id) return
     const load = async () => {
-      const { data: wf } = await supabase
-        .from('workflows')
-        .select('*')
-        .eq('id', id)
-        .single()
+      const { data: wf } = await supabase.from('workflows').select('*').eq('id', id).single()
       if (wf) setWorkflowName(wf.name)
 
-      const { data: blks } = await supabase
-        .from('blocks')
-        .select('*')
-        .eq('workflow_id', id)
-        .order('order_index')
-
+      const { data: blks } = await supabase.from('blocks').select('*').eq('workflow_id', id).order('order_index')
       if (blks) {
-        const map: Record<BlockType, Block | null> = {
-          hook: null, script: null, shoot: null, edit: null, publish: null,
-        }
+        const map: Record<BlockType, Block | null> = { hook: null, script: null, shoot: null, edit: null, publish: null }
         blks.forEach((b) => { map[b.type as BlockType] = b })
         setBlocks(map)
       }
@@ -78,7 +80,6 @@ export default function WorkflowPage() {
   const handleGenerate = async () => {
     if (!topic.trim()) return
     setGenerating(true)
-
     try {
       const res = await fetch('/api/generate', {
         method: 'POST',
@@ -86,14 +87,11 @@ export default function WorkflowPage() {
         body: JSON.stringify({ topic: topic.trim(), isPro, platform }),
       })
       const data = await res.json()
-
       const stagesToSave = isPro ? ALL_STAGES : (['hook', 'script'] as BlockType[])
-
       for (let i = 0; i < stagesToSave.length; i++) {
         const stage = stagesToSave[i]
         const content = data[stage]
         if (!content) continue
-
         const existing = blocks[stage]
         if (existing) {
           await supabase.from('blocks').update({ notes: content, status: 'done' }).eq('id', existing.id)
@@ -108,17 +106,9 @@ export default function WorkflowPage() {
           })
         }
       }
-
-      const { data: blks } = await supabase
-        .from('blocks')
-        .select('*')
-        .eq('workflow_id', id)
-        .order('order_index')
-
+      const { data: blks } = await supabase.from('blocks').select('*').eq('workflow_id', id).order('order_index')
       if (blks) {
-        const map: Record<BlockType, Block | null> = {
-          hook: null, script: null, shoot: null, edit: null, publish: null,
-        }
+        const map: Record<BlockType, Block | null> = { hook: null, script: null, shoot: null, edit: null, publish: null }
         blks.forEach((b) => { map[b.type as BlockType] = b })
         setBlocks(map)
       }
@@ -129,76 +119,59 @@ export default function WorkflowPage() {
     }
   }
 
-  const doneCount = ALL_STAGES.filter((s) => blocks[s]?.status === 'done').length
-  const progress = Math.round((doneCount / 5) * 100)
-
   const handleLockedClick = (stage: BlockType) => {
     setLockedStageClicked(stage)
     setShowWaitlist(true)
   }
 
+  const doneCount = ALL_STAGES.filter((s) => blocks[s]?.status === 'done').length
+  const progress = Math.round((doneCount / 5) * 100)
+
   return (
     <div className="min-h-screen bg-[#0f0f0f] text-white px-4 py-8 max-w-3xl mx-auto">
       {showWaitlist && (
-        <WaitlistModal
-          stageName={STAGE_LABELS[lockedStageClicked]}
-          onClose={() => setShowWaitlist(false)}
-        />
+        <WaitlistModal stageName={STAGE_LABELS[lockedStageClicked]} onClose={() => setShowWaitlist(false)} />
       )}
-
-      <button
-        onClick={() => navigate('/')}
-        className="text-[#6b7280] hover:text-white text-sm mb-6 flex items-center gap-1 transition-colors"
-      >
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      <button onClick={() => navigate('/')} className="text-[#6b7280] hover:text-white text-sm mb-6 flex items-center gap-1 transition-colors">
         ← Back
       </button>
-
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white mb-1">{workflowName}</h1>
+        {editingTitle ? (
+          <input
+            value={workflowName}
+            onChange={(e) => setWorkflowName(e.target.value)}
+            onBlur={handleTitleSave}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleTitleSave() }}
+            className="text-2xl font-bold text-white mb-1 bg-transparent border-b border-[#7c3aed] outline-none w-full max-w-xs"
+            autoFocus
+          />
+        ) : (
+          <h1 className="text-2xl font-bold text-white mb-1 cursor-pointer" onClick={() => setEditingTitle(true)}>
+            {workflowName}
+          </h1>
+        )}
         <div className="flex items-center gap-3 mt-3">
           <div className="flex-1 h-1.5 bg-[#2a2a2a] rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[#7c3aed] rounded-full transition-all duration-500"
-              style={{ width: `${progress}%` }}
-            />
+            <div className="h-full bg-[#7c3aed] rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
           </div>
           <span className="text-[#6b7280] text-xs">{progress}% complete</span>
         </div>
-
         {!isPro && (
           <div className="mt-3 flex items-center gap-2 bg-[#7c3aed]/10 border border-[#7c3aed]/20 rounded-lg px-4 py-2.5">
             <span className="text-[#a78bfa] text-xs">🔒 Free plan: Hook + Script only.</span>
-            <button
-              onClick={() => { setLockedStageClicked('shoot'); setShowWaitlist(true) }}
-              className="text-[#7c3aed] text-xs font-semibold hover:underline ml-auto"
-            >
+            <button onClick={() => { setLockedStageClicked('shoot'); setShowWaitlist(true) }} className="text-[#7c3aed] text-xs font-semibold hover:underline ml-auto">
               Upgrade to Pro →
             </button>
           </div>
         )}
       </div>
-
       <div className="flex gap-3 mb-8">
-          <div className="flex gap-2 mb-2">
-            <button
-              onClick={() => setPlatform('instagram')}
-              className={`text-xs px-4 py-2 rounded-lg transition-colors ${platform === 'instagram' ? 'bg-[#7c3aed] text-white border-[#7c3aed]' : 'bg-[#1a1a1a] text-[#6b7280] border border-[#2a2a2a]'} `}
-            >
-              Instagram Reels
-            </button>
-            <button
-              onClick={() => setPlatform('youtube')}
-              className={`text-xs px-4 py-2 rounded-lg transition-colors ${platform === 'youtube' ? 'bg-[#7c3aed] text-white border-[#7c3aed]' : 'bg-[#1a1a1a] text-[#6b7280] border border-[#2a2a2a]'} `}
-            >
-              YouTube Shorts
-            </button>
-            <button
-              onClick={() => setPlatform('linkedin')}
-              className={`text-xs px-4 py-2 rounded-lg transition-colors ${platform === 'linkedin' ? 'bg-[#7c3aed] text-white border-[#7c3aed]' : 'bg-[#1a1a1a] text-[#6b7280] border border-[#2a2a2a]'} `}
-            >
-              LinkedIn
-            </button>
-          </div>
+        <div className="flex gap-2 mb-2">
+          <button onClick={() => setPlatform('instagram')} className={`text-xs px-4 py-2 rounded-lg transition-colors ${platform === 'instagram' ? 'bg-[#7c3aed] text-white border-[#7c3aed]' : 'bg-[#1a1a1a] text-[#6b7280] border border-[#2a2a2a]'}`}>Instagram Reels</button>
+          <button onClick={() => setPlatform('youtube')} className={`text-xs px-4 py-2 rounded-lg transition-colors ${platform === 'youtube' ? 'bg-[#7c3aed] text-white border-[#7c3aed]' : 'bg-[#1a1a1a] text-[#6b7280] border border-[#2a2a2a]'}`}>YouTube Shorts</button>
+          <button onClick={() => setPlatform('linkedin')} className={`text-xs px-4 py-2 rounded-lg transition-colors ${platform === 'linkedin' ? 'bg-[#7c3aed] text-white border-[#7c3aed]' : 'bg-[#1a1a1a] text-[#6b7280] border border-[#2a2a2a]'}`}>LinkedIn</button>
+        </div>
         <input
           type="text"
           placeholder="e.g. 5 habits that changed my morning routine"
@@ -207,27 +180,18 @@ export default function WorkflowPage() {
           onKeyDown={(e) => e.key === 'Enter' && !generating && handleGenerate()}
           className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#7c3aed] placeholder-[#6b7280]"
         />
-        <button
-          onClick={handleGenerate}
-          disabled={generating || !topic.trim()}
-          className="bg-[#7c3aed] hover:bg-[#6d28d9] disabled:opacity-50 text-white px-5 py-3 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap"
-        >
+        <button onClick={handleGenerate} disabled={generating || !topic.trim()} className="bg-[#7c3aed] hover:bg-[#6d28d9] disabled:opacity-50 text-white px-5 py-3 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap">
           {generating ? 'Generating...' : 'Generate All'}
         </button>
       </div>
-
       <div className="space-y-3">
         {ALL_STAGES.map((stage) => {
           const isLocked = !isPro && PRO_STAGES.includes(stage)
           const block = blocks[stage]
           const meta = BLOCK_META[stage]
-
           if (isLocked) {
             return (
-              <div
-                key={stage}
-                className="border border-[#2a2a2a] rounded-xl p-5 flex items-center justify-between bg-[#1a1a1a]/50"
-              >
+              <div key={stage} className="border border-[#2a2a2a] rounded-xl p-5 flex items-center justify-between bg-[#1a1a1a]/50">
                 <div className="flex items-center gap-3">
                   <span className="text-lg">{STAGE_ICONS[stage]}</span>
                   <div>
@@ -235,16 +199,12 @@ export default function WorkflowPage() {
                     <p className="text-[#6b7280]/60 text-xs mt-0.5">Pro feature</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => handleLockedClick(stage)}
-                  className="flex items-center gap-1.5 bg-[#7c3aed]/10 hover:bg-[#7c3aed]/20 border border-[#7c3aed]/30 text-[#a78bfa] text-xs font-semibold px-4 py-2 rounded-lg transition-colors"
-                >
+                <button onClick={() => handleLockedClick(stage)} className="flex items-center gap-1.5 bg-[#7c3aed]/10 hover:bg-[#7c3aed]/20 border border-[#7c3aed]/30 text-[#a78bfa] text-xs font-semibold px-4 py-2 rounded-lg transition-colors">
                   🔒 Unlock
                 </button>
               </div>
             )
           }
-
           return (
             <div key={stage}>
               {block ? (
@@ -258,9 +218,7 @@ export default function WorkflowPage() {
                   workflowId={id!}
                   topic={topic}
                   isPro={isPro}
-                  onUpdate={(updated) =>
-                    setBlocks((prev) => ({ ...prev, [stage]: updated }))
-                  }
+                  onUpdate={(updated) => setBlocks((prev) => ({ ...prev, [stage]: updated }))}
                 />
               ) : (
                 <div className="border border-[#2a2a2a] rounded-xl p-5 flex items-center gap-3 bg-[#1a1a1a]/30">
