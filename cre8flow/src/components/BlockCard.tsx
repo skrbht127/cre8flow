@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import type { Block, BlockType } from '../lib/supabase'
-import { ChevronDown, Check, Clock, AlertCircle } from 'lucide-react'
+import { ChevronDown, Check, Clock, AlertCircle, Copy, RefreshCw } from 'lucide-react'
 
 interface BlockCardProps {
   block: Block
@@ -11,17 +11,23 @@ interface BlockCardProps {
   meta: { color: string; label: string }
   generating: boolean
   workflowId: string
+  topic: string
+  isPro: boolean
   onUpdate: (updated: Block) => void
 }
 
 export default function BlockCard({
   block,
+  type,
   label,
   icon,
   meta,
+  topic,
+  isPro,
   onUpdate,
 }: BlockCardProps) {
   const [expanded, setExpanded] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const statusIcon = {
@@ -79,6 +85,60 @@ export default function BlockCard({
 
       {expanded && (
         <div className="border-t border-[#2a2a2a] p-4 space-y-3">
+          <div className="flex justify-between items-center mb-2">
+            <div />
+            <div className="flex gap-2">
+              <button
+                onClick={async () => {
+                  await navigator.clipboard.writeText(block.notes || '')
+                  setCopied(true)
+                  setTimeout(() => setCopied(false), 2000)
+                }}
+                className="text-xs bg-[#2a2a2a] hover:bg-[#333] text-[#9ca3af] hover:text-white rounded-lg px-3 py-1.5 flex items-center gap-1.5"
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-3 h-3" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3 h-3" />
+                    Copy
+                  </>
+                )}
+              </button>
+              <button
+                onClick={async () => {
+                  setSaving(true)
+                  try {
+                    const res = await fetch('/api/generate', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ topic, isPro, stages: [type] }),
+                    })
+                    const data = await res.json()
+                    const newContent = data[type]
+                    if (newContent) {
+                      await handleNotesChange(newContent)
+                    }
+                  } catch (e) {
+                    console.error('Regenerate error:', e)
+                  }
+                  setSaving(false)
+                }}
+                disabled={saving}
+                className="text-xs bg-[#2a2a2a] hover:bg-[#333] text-[#7c3aed] hover:text-[#a78bfa] rounded-lg px-3 py-1.5 flex items-center gap-1.5"
+              >
+                {saving ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+                {saving ? 'Regenerating...' : 'Regenerate'}
+              </button>
+            </div>
+          </div>
           <textarea
             value={block.notes}
             onChange={(e) => handleNotesChange(e.target.value)}

@@ -48,12 +48,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const { topic, isPro } = req.body
+  const { topic, isPro, stages } = req.body
   if (!topic) return res.status(400).json({ error: 'Missing topic' })
 
-  const stagesToGenerate = isPro
-    ? ['hook', 'script', 'shoot', 'edit', 'publish']
-    : ['hook', 'script']
+  let stagesToGenerate: string[]
+  if (Array.isArray(stages) && stages.length > 0) {
+    stagesToGenerate = stages
+  } else {
+    stagesToGenerate = isPro
+      ? ['hook', 'script', 'shoot', 'edit', 'publish']
+      : ['hook', 'script']
+  }
 
   try {
     const kb = formatKnowledge()

@@ -228,6 +228,8 @@ export default function WorkflowPage() {
                   meta={meta}
                   generating={generating}
                   workflowId={id!}
+                  topic={topic}
+                  isPro={isPro}
                   onUpdate={(updated) =>
                     setBlocks((prev) => ({ ...prev, [stage]: updated }))
                   }
