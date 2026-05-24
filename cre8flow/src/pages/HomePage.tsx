@@ -7,7 +7,7 @@ import { Plus, Sparkles, Trash2 } from 'lucide-react'
 
 export default function HomePage() {
   const navigate = useNavigate()
-  const { user, signOut } = useAuth()
+  const { signOut } = useAuth()
   const workflowsRef = useRef<HTMLInputElement>(null)
   const [workflows, setWorkflows] = useState<Workflow[]>([])
   const [loading, setLoading] = useState(true)
@@ -67,14 +67,22 @@ export default function HomePage() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-12">
-          <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
-            <Sparkles className="w-8 h-8 text-accent" />
-            Cre8Flow
-          </h1>
-          <p className="text-muted text-lg">
-            Your content pipeline, from idea to publish — powered by AI
-          </p>
-        </div>
+          <div>
+            <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
+              <Sparkles className="w-8 h-8 text-accent" />
+              Cre8Flow
+            </h1>
+             <p className="text-muted text-lg">
+              Your content pipeline, from idea to publish — powered by AI
+             </p>
+            </div>
+            <button
+              onClick={signOut}
+              className="px-4 py-2 text-sm text-muted border border-border rounded hover:text-white hover:border-accent transition"
+            >
+               Sign Out
+            </button>
+          </div>
 
         {/* Create New Workflow */}
         <div className="mb-12 p-6 bg-surface border border-border rounded-lg">

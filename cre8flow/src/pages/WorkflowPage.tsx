@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import Toast from '../components/Toast'
 import { useParams, useNavigate } from 'react-router-dom'
@@ -7,6 +7,7 @@ import type { Block, BlockType } from '../lib/supabase'
 import { BLOCK_META } from '../lib/supabase'
 import BlockCard from '../components/BlockCard'
 import WaitlistModal from '../components/WaitlistModal'
+import { Download } from 'lucide-react'
 
 const PRO_STAGES: BlockType[] = ['shoot', 'edit', 'publish']
 const ALL_STAGES: BlockType[] = ['hook', 'script', 'shoot', 'edit', 'publish']
@@ -129,7 +130,7 @@ export default function WorkflowPage() {
   const doneCount = ALL_STAGES.filter((s) => blocks[s]?.status === 'done').length
   const progress = Math.round((doneCount / 5) * 100)
 
-  return (
+    return (
     <div className="min-h-screen bg-[#0f0f0f] text-white px-4 py-8 max-w-3xl mx-auto">
       {showWaitlist && (
         <WaitlistModal stageName={STAGE_LABELS[lockedStageClicked]} onClose={() => setShowWaitlist(false)} />
@@ -138,6 +139,34 @@ export default function WorkflowPage() {
       <button onClick={() => navigate('/')} className="text-[#6b7280] hover:text-white text-sm mb-6 flex items-center gap-1 transition-colors">
         ← Back
       </button>
+
+      {/* Export button added here */}
+      <div className="flex items-center gap-3 mt-3">
+        <button
+          onClick={handleExport}
+          className="text-sm font-medium text-white mb-1 bg-[#7c3aed] hover:bg-[#6d28d9] rounded-lg px-3 py-1"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          Export
+        </button>
+      </div>
+
+      {isExportOpen && (
+        <div className="absolute z-60 bg-white shadow-lg rounded-lg p-2 w-full">
+          <div className="flex space-x-4">
+            <button onClick={() => handleExportOption('md')}>Export as Markdown</button>
+            <button onClick={() => handleExportOption('pdf')}>Export as PDF</button>
+          </div>
+          <button
+            onClick={() => handleExport()}
+            className="mt-2 bg-[#7c3aed] hover:bg-[#6d28d9] rounded-lg px-3 py-1"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
       <div className="mb-8">
         {editingTitle ? (
           <input
