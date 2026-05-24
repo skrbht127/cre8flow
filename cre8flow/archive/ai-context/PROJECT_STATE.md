@@ -14,10 +14,7 @@
 
 ## Product Vision
 A 5-stage pipeline tool: `Hook → Script → Shoot Plan → Edit Notes → Publish Strategy`
-
 One input (video idea) → AI agent reasons across ALL 5 stages → grounded outputs via Creator Knowledge Base (RAG-style JSON injection for MVP, pgvector in v2).
-
-Not just a pipeline tracker — a "content OS" that knows creator craft (hook formulas, shot types, script structures, edit patterns, publish strategies).
 
 ## Stack (LOCKED)
 ```
@@ -33,11 +30,11 @@ Routing      → React Router DOM
 
 ## Creator Knowledge Base (RAG Foundation)
 Structured JSON in `src/lib/knowledge.ts`:
-- **HOOK_FORMULAS** — 7 patterns (bold claim, question, contrast, story, number, call-out, result-first)
-- **SHOT_TYPES** — 6 types (talking head, B-roll VO, OTS POV, split screen, text-only, screen recording)
-- **SCRIPT_STRUCTURES** — 4 structures (Hook→Problem→Solution→CTA, Story Arc, Listicle, Contrast/Flip)
-- **EDIT_PATTERNS** — 8 rules (beat cuts, j-cut, l-cut, jump cuts, zoom punch, text timing, first 3s rule, color grading)
-- **PUBLISH_STRATEGIES** — 3 platforms (Instagram Reels, TikTok, YouTube Shorts) with caption formulas + timing
+- **HOOK_FORMULAS** — 7 patterns
+- **SHOT_TYPES** — 6 types
+- **SCRIPT_STRUCTURES** — 4 structures
+- **EDIT_PATTERNS** — 8 rules
+- **PUBLISH_STRATEGIES** — 3 platforms
 
 ## Monetisation Strategy
 - **Free tier**: 3 workflows max, AI on Hook + Script only
@@ -49,8 +46,7 @@ Structured JSON in `src/lib/knowledge.ts`:
 - No paid APIs. Groq free tier only (already has key from VoiceBridge project).
 - No HuggingFace Spaces backend (cold start UX too bad for monetisable product).
 - No auth on MVP (feature depth first).
-- Windows machine (PowerShell quirks apply: use Remove-Item not rmdir, cd D:\Desktop etc.)
-- Node v26.2.0, npm v11.13.0, Bun v1.3.14, Vercel CLI installed globally via npm.
+- Windows machine (PowerShell quirks apply).
 
 ## Architecture — File Structure
 ```
@@ -86,24 +82,19 @@ RLS disabled on all 3 tables for MVP.
 ## Implementation Roadmap
 **MVP (COMPLETE ✅)**
 1. ✅ Env setup (Node, Bun, Git, Vercel CLI)
-2. ✅ Fresh Vite project scaffolded at C:\Users\HP\cre8flow
+2. ✅ Fresh Vite project scaffolded
 3. ✅ Dependencies installed (react-router-dom, supabase, langchain, groq, lucide-react etc.)
 4. ✅ Tailwind v3 configured with custom dark theme
 5. ✅ Folder structure created
-6. ✅ knowledge.ts — full Creator KB (5 arrays, 30+ entries)
-7. ✅ supabase.ts — client + types + BLOCK_META
-8. ✅ tailwind.config.js — custom dark theme
-9. ✅ src/index.css — base styles
-10. ✅ src/main.tsx — BrowserRouter setup
-11. ✅ src/App.tsx — Routes setup
-12. ✅ api/generate.ts — LangChain + Groq, all 5 stages, parallel generation
-13. ✅ vercel.json — SPA + API rewrites
-14. ✅ src/pages/HomePage.tsx — workflow list + create
-15. ✅ src/pages/WorkflowPage.tsx — pipeline builder + Generate All
-16. ✅ src/components/BlockCard.tsx — accordion with status
-17. ✅ .env setup (Supabase URL + anon key + Groq key)
-18. ✅ Supabase DB tables (workflows, blocks, waitlist)
-19. ✅ Deployed to Vercel — LIVE
+6. ✅ knowledge.ts — full Creator KB ✅
+7. ✅ supabase.ts — client + types ✅
+8. ✅ api/generate.ts — LangChain + Groq, all 5 stages ✅
+9. ✅ vercel.json — SPA + API rewrites ✅
+10. ✅ src/pages/HomePage.tsx — workflow list + create ✅
+11. ✅ src/pages/WorkflowPage.tsx — pipeline builder + Generate All ✅
+12. ✅ src/components/BlockCard.tsx — accordion with status ✅
+13. ✅ .env setup (Supabase URL + anon key + Groq key) ✅
+14. ✅ Deployed to Vercel — LIVE ✅
 
 **v2 (next sprint)**
 - [ ] Freemium gate — free users see Hook + Script only, Pro waitlist modal on locked stages
@@ -118,7 +109,7 @@ RLS disabled on all 3 tables for MVP.
 ## Key Technical Decisions (locked, don't revisit)
 - Vercel over HuggingFace: better UX, zero cold start
 - JSON KB injection over ChromaDB: ChromaDB can't run in Vercel serverless
-- Groq over Claude/Gemini: free tier, fast inference, real interview talking point
+- Groq over Claude/Gemini: free tier, fast inference, interview talking point
 - Tailwind v3 over v4: stability, postcss compatibility
 - React Router DOM over TanStack Router: simpler for plain Vite SPA
 - Single "Generate All" button over per-block generate: better UX + cleaner freemium gate
@@ -137,3 +128,4 @@ RLS disabled on all 3 tables for MVP.
 - Style personalization via user's past content
 - Multi-platform output (Reels, TikTok, Shorts simultaneously)
 - HYBE/entertainment industry version (K-pop content production pipelines)
+```

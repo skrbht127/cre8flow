@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
+import { useAuth } from '../hooks/useAuth'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import type { Workflow } from '../lib/supabase'
@@ -6,6 +7,7 @@ import { Plus, Sparkles, Trash2 } from 'lucide-react'
 
 export default function HomePage() {
   const navigate = useNavigate()
+  const { user, signOut } = useAuth()
   const workflowsRef = useRef<HTMLInputElement>(null)
   const [workflows, setWorkflows] = useState<Workflow[]>([])
   const [loading, setLoading] = useState(true)
@@ -64,7 +66,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-[#0f0f0f] text-white p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="mb-12">
+        <div className="flex justify-between items-center mb-12">
           <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
             <Sparkles className="w-8 h-8 text-accent" />
             Cre8Flow

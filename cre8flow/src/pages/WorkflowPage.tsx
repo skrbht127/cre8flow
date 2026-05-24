@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useAuth } from '../hooks/useAuth'
 import Toast from '../components/Toast'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -42,7 +43,8 @@ export default function WorkflowPage() {
   const [showWaitlist, setShowWaitlist] = useState(false)
   const [lockedStageClicked, setLockedStageClicked] = useState<BlockType>('shoot')
 
-  const isPro = localStorage.getItem('cre8flow_pro') === 'true'
+  const { user } = useAuth()
+  const isPro = user?.user_metadata?.is_pro === true || localStorage.getItem('cre8flow_pro') === 'true'
 
   const showToast = (msg: string, type: 'success' | 'error') => {
     setToast({ message: msg, type })

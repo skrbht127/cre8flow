@@ -1,47 +1,105 @@
 # Overview
-This repository contains a Vercel-based React application with a Supabase database. The application is a workflow management tool that utilizes LangChain and Groq for AI-powered features.
+This repository hosts **Cre8Flow**, an AI‑powered workflow OS for short‑form video/reels creators. It is a Vercel‑deployed React + Vite SPA with a Supabase backend and LangChain + Groq for AI generation.
 
-# Routing
-The application uses React Router DOM for routing. The main routes are:
-* `/workflow/:id`: a dynamic route for workflow pages
+# Product Vision
+A five‑stage pipeline tool: **Hook → Script → Shoot Plan → Edit Notes → Publish Strategy**. One video‑idea input drives an AI agent that reasons across all stages and returns grounded outputs via a Creator Knowledge Base (RAG‑style JSON injection today, pgvector in v2).
 
-# API
-The application has a serverless API endpoint at `/api/generate`, which handles requests for generating workflow data. The API uses LangChain and Groq to inject knowledge base context and return JSON data.
+# Stack (locked)
+```
+Frontend  → React + Vite + TypeScript → Vercel
+Backend   → Vercel serverless functions (Node.js) in /api
+AI layer  → LangChain + @langchain/groq (Llama 3.3 70B) – free tier only
+Database  → Supabase (Postgres) – RLS disabled for MVP
+Vector DB → JSON knowledge base (MVP) → pgvector via Supabase (v2)
+Payments  → Waitlist/email capture now, Stripe later (v2)
+Styling   → Tailwind CSS v3 with custom dark theme
+Routing   → React Router DOM
+```
 
-# Database
-The application uses a Supabase database with two tables: `workflows` and `blocks`. The `workflows` table stores data for workflows, and the `blocks` table stores data for blocks associated with each workflow.
+# Architecture & Repo Structure
+```
+cre8flow/
+├─ api/
+│   └─ generate.ts            # Vercel serverless fn – LangChain + Groq (generates all 5 stages)
+├─ src/
+│   ├─ pages/
+│   │   ├─ HomePage.tsx       # List workflows, create new
+│   │   └─ WorkflowPage.tsx   # 5‑stage accordion, "Generate All" button
+│   ├─ components/
+│   │   └─ BlockCard.tsx      # Accordion block UI, status, regenerate
+│   ├─ lib/
+│   │   ├─ knowledge.ts       # Creator KB (hooks, shots, scripts, edit patterns, publish strategies)
+│   │   └─ supabase.ts        # Supabase client + types
+│   ├─ App.tsx                # React Router routes
+│   ├─ main.tsx               # BrowserRouter entry
+│   └─ index.css              # Tailwind base styles
+├─ tailwind.config.js         # Custom dark‑theme config
+├─ postcss.config.js
+├─ vite.config.ts
+├─ vercel.json                # SPA + API rewrites
+└─ package.json
+```
 
-# Knowledge Base
-The application has a structured JSON knowledge base in `src/lib/knowledge.ts`, which includes:
-* **HOOK_FORMULAS**: 7 patterns for writing hooks
-* **SHOT_TYPES**: 6 types of shots for video production
-* **SCRIPT_STRUCTURES**: 4 structures for writing scripts
-* **EDIT_PATTERNS**: 8 rules for editing video
-* **PUBLISH_STRATEGIES**: 3 platforms for publishing video content
+# Knowledge Base (RAG foundation)
+Located in `src/lib/knowledge.ts` – five exported arrays:
+- **HOOK_FORMULAS** (7 patterns)
+- **SHOT_TYPES** (6 types)
+- **SCRIPT_STRUCTURES** (4 structures)
+- **EDIT_PATTERNS** (8 rules)
+- **PUBLISH_STRATEGIES** (3 platforms)
+These are injected into prompts at generation time.
 
-# Monetization Strategy
-The application has a free tier and a pro tier. The free tier is limited to 3 workflows and AI-powered features for hooks and scripts only. The pro tier offers unlimited workflows, all 5 AI-powered features, export, custom pipeline, and personal style memory.
+# Monetisation Strategy
+- **Free tier** – up to 3 workflows; AI only on Hook + Script stages.
+- **Pro tier** – unlimited workflows, all 5 AI stages, export, custom pipeline, future personal‑style memory.
+- **Waitlist CTA** – "Join Pro Waitlist" email capture (no Stripe yet). Revenue will be added in v2 after validating demand.
 
 # Constraints
-The application has the following constraints:
-* No paid APIs (using Groq free tier only)
-* No HuggingFace Spaces backend (due to cold start UX issues)
-* No auth on MVP (feature depth first)
-* Windows machine (using PowerShell)
+- No paid APIs – Groq free tier only.
+- No HuggingFace Spaces – cold‑start latency unacceptable.
+- No auth in MVP – feature depth first.
+- Developed on Windows (PowerShell quirks).
+- Financial constraints – all infrastructure must stay on free tiers.
 
-# Decisions
-The following decisions have been made for this project:
-* Use Vercel over HuggingFace Spaces for the backend
-* Use Groq as the primary language model
-* Use Supabase for the database
-* Implement a free tier and pro tier for monetization
+# Key Decisions (locked)
+- Vercel over HuggingFace Spaces for backend.
+- JSON KB injection (instead of ChromaDB or pgvector) for MVP.
+- Groq as the primary LLM provider.
+- Tailwind v3 over v4 for stability.
+- React Router DOM over TanStack Router for simplicity.
+- Single "Generate All" button for UX and freemium gating.
 
-# Project State
-The project is currently in the development phase. The following features are currently implemented:
-* Workflow management
-* AI-powered generation for hooks and scripts
-* Knowledge base
-* Free tier and pro tier monetization strategy
+# Implementation Roadmap
+**MVP (complete)**
+1. Environment setup (Node 26, Bun 1.3, Vercel CLI)
+2. Vite scaffold, Tailwind config, React Router
+3. Knowledge base, Supabase client, DB tables (`workflows`, `blocks`, `waitlist`)
+4. API `/api/generate` – LangChain + Groq, parallel generation of all 5 stages
+5. UI pages, BlockCard component, freemium UI gating
+6. `.env` with Supabase & Groq keys
+7. Deployed to Vercel – live production URL
 
-## New Section
-This is a new section that has been added to the MASTER_CONTEXT.md file.
+**v2 (next sprint)**
+- [ ] Freemium gate UI – lock stages beyond Hook + Script for free users
+- [ ] Waitlist email capture (modal + `api/waitlist.ts`)
+- [ ] Supabase Auth integration
+- [ ] pgvector RAG (real vector search)
+- [ ] Stripe subscription & billing
+- [ ] Export workflow as PDF/Markdown
+- [ ] Personal style memory (user script embeddings)
+- [ ] Custom pipeline stage builder
+
+# Important Technical Notes
+- `api/generate.ts` imports `../src/lib/knowledge.js` (requires `.js` extension for ESM on Vercel).
+- All Vercel environment variables must be set in the dashboard **and** locally in `.env` for dev.
+- `vercel.json` uses only `rewrites` (no `routes`) to avoid MIME conflicts with Vite.
+- PowerShell: use `Remove-Item -Recurse -Force` instead of `rmdir`.
+- Redeploy: `vercel --prod` from project root.
+- To unlink a Vercel project: `Remove-Item -Recurse -Force .vercel` then `vercel --prod`.
+
+# Future Vision
+- Marketplace for creator‑made pipeline templates.
+- Real‑time collaborative workflows for teams.
+- Style personalization via user‑uploaded scripts and embeddings.
+- Multi‑platform publishing (Reels, TikTok, Shorts) with unified export.
+- Enterprise version for entertainment studios (e.g., K‑pop content pipelines).

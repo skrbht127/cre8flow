@@ -119,7 +119,7 @@ Route format: `export default function handler(req, res)` using `@vercel/node` t
 {
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/*", "destination": "/index.html" }
   ]
 }
 ```
