@@ -1,7 +1,11 @@
 // src/lib/recallMemory.ts
 // Utility to retrieve the most relevant style signals for a given user.
 
-import { supabase } from './supabase'
+import { createClient } from '@supabase/supabase-js'
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL!,
+  process.env.VITE_SUPABASE_ANON_KEY!
+)
 
 // ── ENV ──────────────────────────────────────────────────────────────────────
 const hfToken = process.env.HF_TOKEN || ''
