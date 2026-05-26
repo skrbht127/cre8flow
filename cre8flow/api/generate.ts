@@ -134,7 +134,7 @@ WHY IT WORKS: One sentence on the emotional logic
 
 Rules: NO hashtags. NO generic phrases. Be specific and cinematic. Total output under 150 words.
 
-Platform context: ${archetypeContext}${ragCtx}${ragSection}`,
+Platform context: ${archetypeContext}${ragContext}${ragSection}`,
 
   script: `You are a short-form video scriptwriter with cinematic, editorial sensibility.
 
@@ -151,7 +151,7 @@ ${kb.scripts}
 
 Rules: NO hashtags anywhere in script. Conversational but intentional. If music-driven content, write visual cues not spoken lines.
 
-Platform context: ${archetypeContext}${ragCtx}${ragSection}`,
+Platform context: ${archetypeContext}${ragContext}${ragSection}`,
 
   shoot: `You are a cinematographer who shoots aesthetic short-form content.
 
@@ -171,7 +171,7 @@ ${kb.shots}
 
 Rules: NO hashtags. Be specific — "extreme close-up of steam rising from black liquid, backlit by window" not just "close-up of coffee".
 
-Platform context: ${archetypeContext}${ragCtx}${ragSection}`,
+Platform context: ${archetypeContext}${ragContext}${ragSection}`,
 
   edit: `You are a video editor known for cinematic, music-driven short-form content.
 
@@ -192,7 +192,7 @@ ${kb.aesthetics}
 
 Rules: NO hashtags. Be precise and immediately actionable. Reference specific patterns by name.
 
-Platform context: ${archetypeContext}${ragCtx}${ragSection}`,
+Platform context: ${archetypeContext}${ragContext}${ragSection}`,
 
   publish: `You are a social media strategist who understands aesthetic content and platform algorithms.
 
@@ -213,7 +213,7 @@ ${kb.publish}
 
 Rules: Write the caption in full — no placeholders. Hashtags go ONLY in the HASHTAGS section.
 
-Platform context: ${archetypeContext}${ragCtx}${ragSection}`,
+Platform context: ${archetypeContext}${ragContext}${ragSection}`,
 }
    const message = await llm.invoke(prompts[stage])
   return typeof message.content === 'string' ? message.content : ''
@@ -224,6 +224,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const { topic, isPro, platform = 'instagram', singleStage, archetype, userId } = req.body
+  // Retrieve creator memories for personalization if userId is provided
+  let creatorMemories: string[] = []
+  try {
+    creatorMemories = userId ? await getTopMemories(userId) : []
+  } catch (err) {
+    console.error('Memory recall failed, skipping:', err)
+  }
   if (!topic) return res.status(400).json({ error: 'Missing topic' })
 
   // Embed query once, reuse across all stages
@@ -232,7 +239,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (singleStage) {
     try {
       const kb = formatKnowledge()
-      const content = await generateStage(singleStage, topic, kb, platform, ragContext, archetype, memories)
+      const content = await generateStage(singleStage, topic, kb, platform, ragContext, archetype, creatorMemories)
       return res.status(200).json({ [singleStage]: content })
     } catch (error) {
       console.error('Single stage error:', error)
@@ -247,7 +254,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const kb = formatKnowledge()
     const results = await Promise.all(
-      stagesToGenerate.map((stage) => generateStage(stage, topic, kb, platform, ragContext))
+      stagesToGenerate.map((stage) => generateStage(stage, topic, kb, platform, ragContext, undefined, creatorMemories))
     )
 
     const output: Record<string, string> = {}
