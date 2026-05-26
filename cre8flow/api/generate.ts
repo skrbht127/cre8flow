@@ -12,7 +12,7 @@ import {
   AESTHETIC_STYLES,
   TRANSITION_TYPES,
 } from '../src/lib/knowledge.js'
-import { ARCHETYPES } from '../src/lib/archetypes';
+import { ARCHETYPES } from '../src/lib/archetypes.js';
 import { getTopMemories } from '../src/lib/recallMemory.js';
 
 // ── ENV ──────────────────────────────────────────────────────────────────────
