@@ -41,10 +41,45 @@ export default function WorkflowPage() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [generating, setGenerating] = useState(false)
   const [isExportOpen, setIsExportOpen] = useState(false)
+    const [activeTab, setActiveTab] = useState<'pipeline' | 'identity'>('pipeline')
+  const [identityForm, setIdentityForm] = useState<{
+    editingPace: string[]
+    visualMood: string[]
+    captionTone: string[]
+    hookStyle: string[]
+    musicVibe: string[]
+  }>({
+    editingPace: [],
+    visualMood: [],
+    captionTone: [],
+    hookStyle: [],
+    musicVibe: [],
+  })
+
+  // Store fetched identity records
+  const [identityRecords, setIdentityRecords] = useState<Array<{ signal_text: string; created_at: string }>>([])
+
 
   const { user } = useAuth()
   const isPro = user?.user_metadata?.is_pro === true || localStorage.getItem('cre8flow_pro') === 'true'
   const showToast = (message: string, type: 'success' | 'error') => setToast({ message, type })
+
+  // Load identity records for current user
+  const loadIdentityRecords = async () => {
+    if (!user || !user.id) return
+    try {
+      const { data, error } = await supabase
+        .from('user_style_memory')
+        .select('signal_text, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setIdentityRecords(data || [])
+    } catch (error) {
+      console.error('Error loading identity records:', error)
+    }
+  }
 
   const handleExportOption = (type: 'md' | 'pdf') => {
     setIsExportOpen(false)
@@ -109,6 +144,13 @@ export default function WorkflowPage() {
     }
     load()
   }, [id])
+
+  // Load identity records when user changes
+  useEffect(() => {
+    if (user && user.id) {
+      loadIdentityRecords()
+    }
+  }, [user])
 
   const handleGenerate = async () => {
     if (!topic.trim()) return
@@ -277,46 +319,160 @@ export default function WorkflowPage() {
   </div>
 </div>
 
-      {/* Stages */}
-      <div className="space-y-3">
-        {ALL_STAGES.map((stage) => {
-          const block = blocks[stage]
-          const meta = BLOCK_META[stage]
-          return (
-            <div key={stage}>
-              {block ? (
-                <BlockCard
-                  block={block}
-                  type={stage}
-                  label={STAGE_LABELS[stage]}
-                  icon={STAGE_ICONS[stage]}
-                  meta={meta}
-                  generating={generating}
-                  workflowId={id!}
-                  topic={topic}
-                  isPro={isPro}
-                  onUpdate={(updated) => setBlocks((prev) => ({ ...prev, [stage]: updated }))}
-                />
-              ) : (
-                <div className="border border-[#2a2a2a] rounded-xl p-5 flex items-center gap-3 bg-[#1a1a1a]/30">
-                  <span className="text-lg">{STAGE_ICONS[stage]}</span>
-                  <div className="flex-1">
-                    <p className="text-white font-medium text-sm">{STAGE_LABELS[stage]}</p>
-                    {generating ? (
-                      <div className="mt-2 space-y-1.5">
-                        <div className="h-2 bg-[#2a2a2a] rounded animate-pulse w-3/4" />
-                        <div className="h-2 bg-[#2a2a2a] rounded animate-pulse w-1/2" />
-                      </div>
-                    ) : (
-                      <p className="text-[#6b7280] text-xs mt-0.5">Enter a topic and hit Generate All</p>
-                    )}
+      {/* Tab navigation */}
+      <div className="flex gap-4 mb-4">
+        <button
+          onClick={() => setActiveTab('pipeline')}
+          className={`px-4 py-2 rounded ${activeTab === 'pipeline' ? 'bg-[#7c3aed] text-white' : 'bg-[#1a1a1a] text-[#6b7280]'} transition-colors`}
+        >
+          Pipeline
+        </button>
+        <button
+          onClick={() => setActiveTab('identity')}
+          className={`px-4 py-2 rounded ${activeTab === 'identity' ? 'bg-[#7c3aed] text-white' : 'bg-[#1a1a1a] text-[#6b7280]'} transition-colors`}
+        >
+          Your Identity 🧠
+        </button>
+      </div>
+
+      {/* Stages or Identity */}
+      {activeTab === 'pipeline' ? (
+        <div className="space-y-3">
+          {ALL_STAGES.map((stage) => {
+            const block = blocks[stage]
+            const meta = BLOCK_META[stage]
+            return (
+              <div key={stage}>
+                {block ? (
+                  <BlockCard
+                    block={block}
+                    type={stage}
+                    label={STAGE_LABELS[stage]}
+                    icon={STAGE_ICONS[stage]}
+                    meta={meta}
+                    generating={generating}
+                    workflowId={id!}
+                    topic={topic}
+                    isPro={isPro}
+                    onUpdate={(updated) => setBlocks((prev) => ({ ...prev, [stage]: updated }))}
+                  />
+                ) : (
+                  <div className="border border-[#2a2a2a] rounded-xl p-5 flex items-center gap-3 bg-[#1a1a1a]/30">
+                    <span className="text-lg">{STAGE_ICONS[stage]}</span>
+                    <div className="flex-1">
+                      <p className="text-white font-medium text-sm">{STAGE_LABELS[stage]}</p>
+                      {generating ? (
+                        <div className="mt-2 space-y-1.5">
+                          <div className="h-2 bg-[#2a2a2a] rounded animate-pulse w-3/4" />
+                          <div className="h-2 bg-[#2a2a2a] rounded animate-pulse w-1/2" />
+                        </div>
+                      ) : (
+                        <p className="text-[#6b7280] text-xs mt-0.5">Enter a topic and hit Generate All</p>
+                      )}
+                    </div>
                   </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      ) : (
+        <div className="p-5 bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] space-y-6">
+          <p className="text-xs text-[#6b7280] uppercase tracking-widest font-medium">Define your creative DNA</p>
+
+          {[
+            { label: 'Editing Pace', key: 'editingPace' as const, options: ['Fast Cuts','Balanced','Slow & Cinematic','Chaotic Energy'] },
+            { label: 'Visual Mood', key: 'visualMood' as const, options: ['Dark & Moody','Bright & Airy','Gritty Raw','Neon Aesthetic','Film Grain'] },
+            { label: 'Caption Tone', key: 'captionTone' as const, options: ['Poetic','Direct','Witty','Mysterious','Hype'] },
+            { label: 'Hook Style', key: 'hookStyle' as const, options: ['Bold Statement','Question Hook','Visual Drop','Contrast Hook','Slow Burn'] },
+            { label: 'Music Vibe', key: 'musicVibe' as const, options: ['Lo-fi Chill','Cinematic Build','Hyperpop','No Music','Ambient'] },
+          ].map(({ label, key, options }) => (
+            <div key={key}>
+              <p className="mb-2 text-sm font-medium text-[#a78bfa]">{label}</p>
+              <div className="flex flex-wrap gap-2">
+                {options.map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() =>
+                      setIdentityForm((prev) => ({
+                        ...prev,
+                        [key]: prev[key].includes(opt)
+                          ? prev[key].filter((v) => v !== opt)
+                          : [...prev[key], opt],
+                      }))
+                    }
+                    className={`rounded-full px-3 py-1 text-sm border transition-colors ${
+                      identityForm[key].includes(opt)
+                        ? 'bg-violet-600 border-violet-500 text-white'
+                        : 'bg-zinc-800 border-zinc-600 text-zinc-300 hover:border-zinc-400'
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          <button
+            type="button"
+            onClick={async () => {
+              if (!user || !user.id) {
+                showToast('Please sign in to save your identity', 'error')
+                return
+              }
+
+              // Format the identity string
+              const formatted = `Editing Pace: ${identityForm.editingPace.join(', ')} | Visual Mood: ${identityForm.visualMood.join(', ')} | Caption Tone: ${identityForm.captionTone.join(', ')} | Hook Style: ${identityForm.hookStyle.join(', ')} | Music Vibe: ${identityForm.musicVibe.join(', ')}`
+
+              try {
+                const { error } = await supabase
+                  .from('user_style_memory')
+                  .insert({
+                    user_id: user.id,
+                    signal_text: formatted,
+                    signal_type: 'manual_input',
+                    embedding: null
+                  })
+
+                if (error) throw error
+
+                showToast('Identity saved', 'success')
+                // Reload identity records
+                loadIdentityRecords()
+              } catch (error) {
+                console.error('Error saving identity:', error)
+                showToast('Save failed', 'error')
+              }
+            }}
+            className="mt-2 w-full bg-[#7c3aed] hover:bg-[#6d28d9] text-white py-2.5 rounded-lg text-sm font-semibold transition-colors"
+          >
+            Save Identity
+          </button>
+
+          {/* Display saved identity records */}
+          <div className="mt-8">
+            <p className="text-xs text-[#6b7280] uppercase tracking-widest font-medium mb-3">Your Saved Identities</p>
+            <div className="flex flex-wrap gap-2">
+              {identityRecords.map((record, index) => (
+                <div
+                  key={index}
+                  className="bg-[#2a2a2a] text-white text-xs rounded-full px-4 py-2 flex items-center gap-2"
+                >
+                  <span>{record.signal_text}</span>
+                  <span className="text-[#6b7280]">
+                    {new Date(record.created_at).toLocaleDateString()}
+                  </span>
                 </div>
+              ))}
+              {identityRecords.length === 0 && (
+                <p className="text-[#6b7280] text-xs">No saved identities yet</p>
               )}
             </div>
-          )
-        })}
-      </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
