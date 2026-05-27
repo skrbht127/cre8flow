@@ -149,13 +149,15 @@ export default function HomePage() {
               ))}
             </div>
           ) : workflows.length === 0 ? (
-            <div className="text-center mt-12">
-              <p className="text-muted mb-4">No workflows yet. Create your first one.</p>
+            <div className="text-center mt-16 py-12 border border-dashed border-border rounded-xl">
+              <p className="text-3xl mb-3">🎬</p>
+              <h3 className="text-lg font-semibold mb-1">No workflows yet</h3>
+              <p className="text-muted text-sm mb-6">Start building your creative flow</p>
               <button
                 onClick={() => inputRef.current?.focus()}
-                className="px-4 py-2 bg-accent hover:bg-accent-light rounded"
+                className="px-6 py-2.5 bg-accent hover:bg-accent-light rounded font-semibold text-sm transition"
               >
-                New Workflow
+                + Create your first workflow
               </button>
             </div>
           ) : (

@@ -3,6 +3,7 @@ import HomePage from './pages/HomePage'
 import WorkflowPage from './pages/WorkflowPage'
 import AuthPage from './pages/AuthPage'
 import { useAuth } from './hooks/useAuth'
+import ErrorBoundary from './components/ErrorBoundary'
 
 export default function App() {
   const { user, loading } = useAuth();
@@ -17,9 +18,11 @@ export default function App() {
   if (!user) return <AuthPage />;
 
   return (
+  <ErrorBoundary>
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/workflow/:id" element={<WorkflowPage />} />
     </Routes>
+  </ErrorBoundary>
   );
 }
